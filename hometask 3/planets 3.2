@@ -1,0 +1,70 @@
+from random import randint
+gravitational_constant = 6.67408E-11
+class Star():
+    def __init__(self, m, x, y, Vx = 0, Vy = 0, color = "red", R = 5):
+        self.type = "star"
+        self.m = m  
+        self.x = x  
+        self.y = y 
+        self.Vx = Vx 
+        self.Vy = Vy  
+        self.Fx = 0  
+        self.Fy = 0 
+        self.R = R  
+        self.color = color 
+class Planet():
+    def __init__(self, m, x, y, Vx = 0, Vy = 0, color = "green", R = 5):
+        self.type = "planet"
+        self.m = m  
+        self.x = x  
+        self.y = y 
+        self.Vx = Vx  
+        self.Vy = Vy  
+        self.Fx = 0  
+        self.Fy = 0  
+        self.R = R  
+        self.color = color
+        self.image = None 
+def calculate_force(body, space_objects):
+    body.Fx = body.Fy = 0
+    for obj in space_objects:
+        if body == obj:
+            continue        
+        dx = obj.x - body.x
+        dy = obj.y - body.y
+        distance = (dx**2 + dy**2)**0.5        
+        if distance == 0:
+            continue        
+        force = gravitational_constant * body.m * obj.m / distance**2
+        body.Fx += force * (dx / distance) 
+        body.Fy += force * (dy / distance) 
+def move_space_object(body, dt):
+    ax = body.Fx / body.m  
+    ay = body.Fy / body.m  
+    body.Vx += ax * dt
+    body.Vy += ay * dt
+    body.x += body.Vx * dt
+    body.y += body.Vy * dt
+def recalculate_space_objects_positions(space_objects, dt):
+    for body in space_objects:
+        calculate_force(body, space_objects)
+    for body in space_objects:
+        move_space_object(body, dt)
+def calculate_angular_velocity(planet):
+    radius = (planet.x**2 + planet.y**2)**0.5  
+    speed = (planet.Vx**2 + planet.Vy**2)**0.5  
+    if radius != 0:
+        angular_velocity = speed / radius
+    else:
+        angular_velocity = 0        
+    return angular_velocity
+if __name__ == "__main__":
+    star = Star(m = 1.98892E30, x = 0, y = 0) 
+    planet = Planet(m = 5.974E24, x = 149.60E9, y = 0, Vy = 29.76E3)  
+    dt = 3600  
+    time = 0
+    for i in range(24):  
+        recalculate_space_objects_positions((star, planet), dt)
+        time += dt
+    angular_velocity = calculate_angular_velocity(planet)
+    print(angular_velocity)

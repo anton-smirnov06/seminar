@@ -45,10 +45,10 @@ def calculate_force(body, space_objects):
             continue
         dx = obj.x - body.x
         dy = obj.y - body.y
-        distance = (dx ** 2 + dy ** 2) ** 0.5
+        distance = (dx**2 + dy**2)**0.5
         if distance == 0:
             continue 
-        force = gravitational_constant * body.m * obj.m / distance ** 2
+        force = gravitational_constant * body.m * obj.m / distance**2
         body.Fx += force * (dx / distance) 
         body.Fy += force * (dy / distance) 
 def move_space_object(body, dt):

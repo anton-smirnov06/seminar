@@ -1,0 +1,56 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from skimage import data
+from math import pi, cos, sin
+def fft(x):
+    n = len(x)
+    if n == 1:
+        return x
+    stack = [(x, False)]
+    results = {}
+    count = 0
+    while stack:
+        current_x, processed = stack.pop()
+        current_n = len(current_x)
+        if current_n == 1:
+            results[id(current_x)] = current_x
+            count += 1
+            continue
+        if not processed:
+            stack.append((current_x, True))
+            stack.append((current_x[1::2], False))
+            stack.append((current_x[::2], False))
+        else:
+            even = results[id(current_x[::2])]
+            odd = results[id(current_x[1::2])]
+            w = [np.exp(-2j * pi * k / current_n) * odd[k] for k in range(current_n // 2)]
+    return [even[k] + w[k] for k in range(n//2)] + [even[k] - w[k] for k in range(current_n // 2)]
+def my_fft2(image):
+    n, m = image.shape
+    size_n = 2 ** int(np.ceil(np.log2(n)))
+    size_m = 2 ** int(np.ceil(np.log2(m)))
+    padded = np.zeros((size_n, size_m), dtype=complex)
+    padded[:n, :m] = image
+    temp = np.array([fft(row) for row in padded])
+    return np.array([fft(col) for col in temp.T]).T
+def fftshift(fft_img):
+    n, m = fft_img.shape
+    return np.roll(fft_img, (n // 2, m // 2), axis=(0, 1))
+def ifft2(fft_img):
+    return np.conj(my_fft2(np.conj(fft_img))) / (fft_img.shape[0] * fft_img.shape[1])
+image = io.imread('C:\\Users\\user\\Downloads\\python\\cotique.jpeg')
+image = rgb2gray(image)
+n, m = image.shape
+fft_image = my_fft2(image.astype(complex))
+fshift = fftshift(fft_image)
+mask_percent = 0.9
+crow, ccol = n // 2, m // 2
+mask = np.zeros_like(fshift)
+r, c = int(n * mask_percent / 2), int(m * mask_percent / 2)
+mask[crow - r:crow + r, ccol - c:ccol + c] = 1
+filtered = fshift * mask
+reconstructed = np.abs(ifft2(fftshift(filtered)))
+plt.figure(figsize=(12, 6))
+plt.subplot(121), plt.imshow(image, cmap='gray')
+plt.subplot(122), plt.imshow(reconstructed, cmap='gray')
+plt.show()

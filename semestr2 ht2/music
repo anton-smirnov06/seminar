@@ -1,0 +1,49 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.io import wavfile
+import sounddevice as sd
+from scipy.fft import fft, fftfreq, ifft
+input_wav = 'C:\\Users\\user\\Downloads\\python\\astolfo full.wav'
+sample_rate, data = wavfile.read(input_wav)
+if len(data.shape) > 1:
+    data = data.mean(axis=1)
+data = data / np.max(np.abs(data))
+low_cutoff = 400
+high_cutoff = 3000
+fft_signal = fft(data)
+freqs = fftfreq(len(data), 1/sample_rate)
+def apply_filter(signal, freqs, cutoff, mode='low'):
+    filtered = signal.copy()
+    if mode == 'low':
+        filtered[np.abs(freqs) > cutoff] = 0
+    else:
+        filtered[np.abs(freqs) < cutoff] = 0
+    return filtered
+fft_low = apply_filter(fft_signal, freqs, low_cutoff, 'low')
+fft_high = apply_filter(fft_signal, freqs, high_cutoff, 'high')
+filtered_low = np.real(ifft(fft_low))
+filtered_high = np.real(ifft(fft_high))
+def normalize_audio(audio):
+    return np.int16(audio * 32767 / np.max(np.abs(audio)))
+wavfile.write('low.wav', sample_rate, normalize_audio(filtered_low))
+wavfile.write('high.wav', sample_rate, normalize_audio(filtered_high))
+def play_audio(audio, sample_rate, duration=3, title=""):
+    sd.play(audio[:int(duration*sample_rate)], sample_rate)
+    sd.wait()
+play_audio(data, sample_rate)
+play_audio(filtered_low, sample_rate)
+play_audio(filtered_high, sample_rate)
+plot_duration = 0.02
+samples_to_show = int(plot_duration * sample_rate)
+def plot_signal(signal, title, xlabel="Отсчеты", ylabel="Амплитуда"):
+    plt.figure(figsize=(10, 4))
+    plt.plot(signal[:samples_to_show])
+    plt.title(title)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+plot_signal(data, "Оригинальный сигнал")
+plot_signal(filtered_low, f"Низкие частоты (<{low_cutoff} Гц)")
+plot_signal(filtered_high, f"Высокие частоты (> {high_cutoff} Гц)")
